@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Snake — Arnix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      font-family: 'Nunito', sans-serif; color: #fff;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 1rem; user-select: none;
+    }
+    .back-btn {
+      align-self:flex-start; background:rgba(255,255,255,0.08);
+      border:none; color:#fff; padding:0.5rem 1rem; border-radius:99px;
+      font-family:'Nunito',sans-serif; font-weight:700; cursor:pointer;
+      font-size:0.9rem; margin-bottom:0.8rem; text-decoration:none;
+    }
+    h1 { font-family:'Fredoka One',cursive; font-size:2rem; margin-bottom:0.5rem;
+      background:linear-gradient(135deg,#6bcb77,#ffd93d); -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent; background-clip:text; }
+    .score-row { display:flex; gap:1rem; margin-bottom:0.8rem; }
+    .score-box {
+      background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:0.5rem 1.2rem; text-align:center;
+    }
+    .score-box .label { font-size:0.7rem; color:rgba(255,255,255,0.5); font-weight:700; text-transform:uppercase; }
+    .score-box .value { font-family:'Fredoka One',cursive; font-size:1.5rem; color:#6bcb77; }
+    canvas {
+      border-radius:16px; border:2px solid rgba(107,203,119,0.3);
+      box-shadow:0 0 40px rgba(107,203,119,0.1);
+      max-width:100%;
+    }
+    .controls { display:grid; grid-template-columns:repeat(3,60px); grid-template-rows:repeat(2,60px); gap:8px; margin-top:1rem; }
+    .ctrl-btn {
+      background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.1);
+      border-radius:12px; color:#fff; font-size:1.4rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ctrl-btn:active { background:rgba(107,203,119,0.2); border-color:#6bcb77; transform:scale(0.92); }
+    .ctrl-up { grid-column:2; }
+    .ctrl-left { grid-column:1; grid-row:2; }
+    .ctrl-down { grid-column:2; grid-row:2; }
+    .ctrl-right { grid-column:3; grid-row:2; }
+    .start-btn {
+      margin-top:1rem; padding:0.8rem 2.5rem;
+      background:linear-gradient(135deg,#6bcb77,#ffd93d); border:none;
+      border-radius:12px; color:#1a1a2e; font-family:'Nunito',sans-serif;
+      font-size:1rem; font-weight:800; cursor:pointer;
+    }
+    .overlay {
+      position:absolute; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">← Back</a>
+  <h1>🐍 Snake</h1>
+  <div class="score-row">
+    <div class="score-box"><div class="label">Score</div><div class="value" id="score">0</div></div>
+    <div class="score-box"><div class="label">Best</div><div class="value" id="best">0</div></div>
+  </div>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <div class="controls">
+    <button class="ctrl-btn ctrl-up" onclick="changeDir(0,-1)">▲</button>
+    <button class="ctrl-btn ctrl-left" onclick="changeDir(-1,0)">◀</button>
+    <button class="ctrl-btn ctrl-down" onclick="changeDir(0,1)">▼</button>
+    <button class="ctrl-btn ctrl-right" onclick="changeDir(1,0)">▶</button>
+  </div>
+  <button class="start-btn" id="start-btn" onclick="startGame()">▶ Start Game</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const GRID = 15, SIZE = 300/GRID;
+    let snake, dir, nextDir, food, score, best=0, running=false, interval;
+
+    function startGame() {
+      document.getElementById('start-btn').textContent = '🔄 Restart';
+      snake = [{x:7,y:7},{x:6,y:7},{x:5,y:7}];
+      dir = {x:1,y:0}; nextDir = {x:1,y:0};
+      score = 0; updateScore();
+      placeFood(); running = true;
+      clearInterval(interval);
+      interval = setInterval(gameLoop, 150);
+    }
+
+    function placeFood() {
+      let pos;
+      do { pos = {x:Math.floor(Math.random()*GRID), y:Math.floor(Math.random()*GRID)}; }
+      while(snake.some(s=>s.x===pos.x&&s.y===pos.y));
+      food = pos;
+    }
+
+    function gameLoop() {
+      dir = nextDir;
+      const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+      if(head.x<0||head.x>=GRID||head.y<0||head.y>=GRID||snake.some(s=>s.x===head.x&&s.y===head.y)) {
+        clearInterval(interval); running=false; drawGameOver(); return;
+      }
+      snake.unshift(head);
+      if(head.x===food.x&&head.y===food.y) { score+=10; updateScore(); placeFood(); }
+      else snake.pop();
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0d1b2a'; ctx.fillRect(0,0,300,300);
+      // Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      for(let i=0;i<=GRID;i++){
+        ctx.beginPath(); ctx.moveTo(i*SIZE,0); ctx.lineTo(i*SIZE,300); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,i*SIZE); ctx.lineTo(300,i*SIZE); ctx.stroke();
+      }
+      // Food
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(food.x*SIZE+SIZE/2, food.y*SIZE+SIZE/2, SIZE/2-2, 0, Math.PI*2);
+      ctx.fill();
+      // Snake
+      snake.forEach((s,i) => {
+        const g = ctx.createLinearGradient(s.x*SIZE, s.y*SIZE, s.x*SIZE+SIZE, s.y*SIZE+SIZE);
+        g.addColorStop(0, i===0?'#ffd93d':'#6bcb77');
+        g.addColorStop(1, i===0?'#ff9f43':'#4ecdc4');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.roundRect(s.x*SIZE+1, s.y*SIZE+1, SIZE-2, SIZE-2, 4);
+        ctx.fill();
+      });
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,300,300);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 28px Fredoka One'; ctx.textAlign='center';
+      ctx.fillText('Game Over!', 150, 130);
+      ctx.font = 'bold 18px Nunito';
+      ctx.fillStyle = '#ffd93d';
+      ctx.fillText(`Score: ${score}`, 150, 165);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '14px Nunito';
+      ctx.fillText('Tap Restart to play again', 150, 195);
+    }
+
+    function changeDir(x, y) {
+      if(dir.x===-x&&dir.y===-y) return; // no reverse
+      nextDir = {x,y};
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = score;
+      if(score>best) { best=score; document.getElementById('best').textContent=best; }
+    }
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if(e.key==='ArrowUp') changeDir(0,-1);
+      if(e.key==='ArrowDown') changeDir(0,1);
+      if(e.key==='ArrowLeft') changeDir(-1,0);
+      if(e.key==='ArrowRight') changeDir(1,0);
+    });
+
+    // Swipe
+    let tx=0,ty=0;
+    canvas.addEventListener('touchstart', e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+    canvas.addEventListener('touchend', e=>{
+      const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+      if(Math.abs(dx)>Math.abs(dy)) changeDir(dx>0?1:-1,0);
+      else changeDir(0,dy>0?1:-1);
+    },{passive:true});
+
+    // Initial draw
+    ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,300,300);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='bold 20px Fredoka One'; ctx.textAlign='center';
+    ctx.fillText('Press Start!', 150, 155);
+  </script>
+</body>
+</html>
+
