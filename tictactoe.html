@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe — Arnix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      font-family: 'Nunito', sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 1.5rem 1rem; color: #fff;
+    }
+    .back-btn {
+      align-self: flex-start; background: rgba(255,255,255,0.08);
+      border: none; color: #fff; padding: 0.5rem 1rem; border-radius: 99px;
+      font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer;
+      font-size: 0.9rem; margin-bottom: 1rem; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.15); }
+    h1 { font-family: 'Fredoka One', cursive; font-size: 2.2rem; margin-bottom: 0.2rem;
+      background: linear-gradient(135deg,#ff6b6b,#ffd93d); -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* Mode Selection */
+    #mode-screen { width: 100%; max-width: 380px; }
+    .mode-title { text-align:center; margin-bottom:1.5rem; }
+    .mode-title p { color:rgba(255,255,255,0.5); font-size:0.9rem; margin-top:0.3rem; }
+    .mode-btn {
+      width:100%; padding:1.2rem 1.5rem; margin-bottom:0.8rem;
+      background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+      border-radius:18px; color:#fff; font-family:'Nunito',sans-serif;
+      font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s;
+      display:flex; align-items:center; gap:1rem; text-align:left;
+    }
+    .mode-btn:hover { transform:translateY(-2px); }
+    .mode-btn.ai:hover { border-color:#ff6b6b; box-shadow:0 10px 30px rgba(255,107,107,0.2); }
+    .mode-btn.pnp:hover { border-color:#6bcb77; box-shadow:0 10px 30px rgba(107,203,119,0.2); }
+    .mode-btn.online:hover { border-color:#4d96ff; box-shadow:0 10px 30px rgba(77,150,255,0.2); }
+    .mode-icon { font-size:2rem; }
+    .mode-info h3 { font-size:1.1rem; margin-bottom:0.1rem; }
+    .mode-info p { font-size:0.8rem; color:rgba(255,255,255,0.5); font-weight:600; }
+
+    /* Username Screen */
+    #username-screen { width:100%; max-width:380px; display:none; }
+    .input-group { margin-bottom:1rem; }
+    .input-group label { display:block; font-weight:700; margin-bottom:0.4rem; color:rgba(255,255,255,0.7); font-size:0.9rem; }
+    .input-group input {
+      width:100%; padding:0.8rem 1rem; background:rgba(255,255,255,0.08);
+      border:2px solid rgba(255,255,255,0.1); border-radius:12px; color:#fff;
+      font-family:'Nunito',sans-serif; font-size:1rem; font-weight:600;
+      outline:none; transition:border-color 0.2s;
+    }
+    .input-group input:focus { border-color:#4d96ff; }
+    .input-group input::placeholder { color:rgba(255,255,255,0.3); }
+    .start-btn {
+      width:100%; padding:1rem; background:linear-gradient(135deg,#ff6b6b,#ffd93d);
+      border:none; border-radius:14px; color:#1a1a2e; font-family:'Nunito',sans-serif;
+      font-size:1.1rem; font-weight:800; cursor:pointer; transition:all 0.2s;
+    }
+    .start-btn:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(255,107,107,0.3); }
+
+    /* Game Screen */
+    #game-screen { width:100%; max-width:380px; display:none; }
+    .status-bar {
+      background:rgba(255,255,255,0.05); border-radius:14px;
+      padding:0.8rem 1.2rem; margin-bottom:1.2rem; text-align:center;
+      font-size:1rem; font-weight:700;
+    }
+    .players-row {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:1rem; gap:0.5rem;
+    }
+    .player-box {
+      flex:1; background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:0.7rem; text-align:center; transition:all 0.3s;
+    }
+    .player-box.active { border-color:#ffd93d; background:rgba(255,217,61,0.1); }
+    .player-box .symbol { font-size:1.8rem; }
+    .player-box .pname { font-size:0.8rem; font-weight:700; color:rgba(255,255,255,0.6); margin-top:0.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .vs-text { font-family:'Fredoka One',cursive; color:rgba(255,255,255,0.3); font-size:1.2rem; }
+
+    .board {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+      margin-bottom:1.2rem;
+    }
+    .cell {
+      aspect-ratio:1; background:rgba(255,255,255,0.05);
+      border:2px solid rgba(255,255,255,0.08); border-radius:16px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:2.8rem; cursor:pointer; transition:all 0.2s;
+      user-select:none;
+    }
+    .cell:hover:not(.taken) { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); transform:scale(1.05); }
+    .cell.taken { cursor:default; }
+    .cell.win { background:rgba(255,217,61,0.2); border-color:#ffd93d; animation:pulse 0.5s ease; }
+    @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+
+    .action-btns { display:flex; gap:0.8rem; }
+    .action-btn {
+      flex:1; padding:0.8rem; border:2px solid rgba(255,255,255,0.1);
+      border-radius:12px; background:rgba(255,255,255,0.05); color:#fff;
+      font-family:'Nunito',sans-serif; font-size:0.9rem; font-weight:700;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .action-btn:hover { background:rgba(255,255,255,0.1); }
+    .action-btn.primary { background:linear-gradient(135deg,#ff6b6b,#ffd93d); color:#1a1a2e; border:none; }
+
+    /* Online Screen */
+    #online-screen { width:100%; max-width:380px; display:none; text-align:center; }
+    .room-box {
+      background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+      border-radius:18px; padding:2rem; margin-bottom:1rem;
+    }
+    .room-code { font-family:'Fredoka One',cursive; font-size:3rem; color:#ffd93d; letter-spacing:0.3em; }
+    .room-label { color:rgba(255,255,255,0.5); font-size:0.85rem; margin-top:0.3rem; }
+    .or-divider { color:rgba(255,255,255,0.3); margin:1rem 0; font-weight:700; }
+    .online-btn {
+      width:100%; padding:0.9rem; border-radius:12px; font-family:'Nunito',sans-serif;
+      font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; margin-bottom:0.6rem;
+    }
+    .online-btn.create { background:linear-gradient(135deg,#4d96ff,#6bcb77); color:#fff; border:none; }
+    .online-btn.join { background:rgba(255,255,255,0.08); color:#fff; border:2px solid rgba(255,255,255,0.15); }
+    .online-btn:hover { transform:translateY(-2px); }
+    .coming-soon-badge {
+      background:rgba(255,217,61,0.15); border:1px solid rgba(255,217,61,0.3);
+      color:#ffd93d; padding:0.8rem 1.2rem; border-radius:12px; font-size:0.85rem;
+      font-weight:700; margin-top:1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-btn">← Back</a>
+
+  <!-- Mode Selection -->
+  <div id="mode-screen">
+    <div class="mode-title">
+      <h1>Tic Tac Toe</h1>
+      <p>Choose your game mode</p>
+    </div>
+    <button class="mode-btn ai" onclick="selectMode('ai')">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info"><h3>vs Computer</h3><p>Play against AI</p></div>
+    </button>
+    <button class="mode-btn pnp" onclick="selectMode('pnp')">
+      <span class="mode-icon">📱</span>
+      <div class="mode-info"><h3>Pass & Play</h3><p>2 players, same phone</p></div>
+    </button>
+    <button class="mode-btn online" onclick="selectMode('online')">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info"><h3>Online</h3><p>Play with strangers</p></div>
+    </button>
+  </div>
+
+  <!-- Username Screen -->
+  <div id="username-screen">
+    <div class="mode-title">
+      <h1 id="username-title">Enter Names</h1>
+      <p id="username-subtitle">Set your player names</p>
+    </div>
+    <div class="input-group" id="p1-group">
+      <label id="p1-label">Player 1 Name (❌)</label>
+      <input type="text" id="p1-name" placeholder="Enter name..." maxlength="12"/>
+    </div>
+    <div class="input-group" id="p2-group">
+      <label>Player 2 Name (⭕)</label>
+      <input type="text" id="p2-name" placeholder="Enter name..." maxlength="12"/>
+    </div>
+    <button class="start-btn" onclick="startGame()">Start Game 🚀</button>
+    <br/><br/>
+    <button class="action-btn" onclick="goBack()">← Back</button>
+  </div>
+
+  <!-- Online Screen -->
+  <div id="online-screen">
+    <div class="mode-title">
+      <h1>Online Mode</h1>
+      <p>Coming soon! 🚀</p>
+    </div>
+    <div class="room-box">
+      <div style="font-size:3rem;margin-bottom:0.5rem;">🌐</div>
+      <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Online Multiplayer</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.9rem;">We're working on bringing online multiplayer to Arnix Games. Stay tuned!</div>
+    </div>
+    <div class="coming-soon-badge">🔧 Online mode coming soon — Supabase integration in progress!</div>
+    <br/>
+    <button class="action-btn" onclick="goBack()">← Back to Modes</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen">
+    <div class="players-row">
+      <div class="player-box active" id="p1-box">
+        <div class="symbol">❌</div>
+        <div class="pname" id="p1-display">Player 1</div>
+      </div>
+      <div class="vs-text">VS</div>
+      <div class="player-box" id="p2-box">
+        <div class="symbol">⭕</div>
+        <div class="pname" id="p2-display">Player 2</div>
+      </div>
+    </div>
+    <div class="status-bar" id="status">Player 1's turn!</div>
+    <div class="board" id="board"></div>
+    <div class="action-btns">
+      <button class="action-btn" onclick="goBack()">← Menu</button>
+      <button class="action-btn primary" onclick="resetGame()">New Game 🔄</button>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = '';
+    let board = Array(9).fill('');
+    let currentPlayer = 'X';
+    let gameOver = false;
+    let p1Name = 'Player 1', p2Name = 'Player 2';
+    const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+    function selectMode(mode) {
+      currentMode = mode;
+      document.getElementById('mode-screen').style.display = 'none';
+      if(mode === 'online') {
+        document.getElementById('online-screen').style.display = 'block';
+      } else {
+        document.getElementById('username-screen').style.display = 'block';
+        if(mode === 'ai') {
+          document.getElementById('username-title').textContent = 'Your Name';
+          document.getElementById('username-subtitle').textContent = 'You will play as ❌';
+          document.getElementById('p2-group').style.display = 'none';
+          document.getElementById('p1-label').textContent = 'Your Name (❌)';
+        } else {
+          document.getElementById('username-title').textContent = 'Player Names';
+          document.getElementById('username-subtitle').textContent = '2 players, pass the phone!';
+          document.getElementById('p2-group').style.display = 'block';
+          document.getElementById('p1-label').textContent = 'Player 1 Name (❌)';
+        }
+      }
+    }
+
+    function goBack() {
+      document.getElementById('mode-screen').style.display = 'block';
+      document.getElementById('username-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('online-screen').style.display = 'none';
+    }
+
+    function startGame() {
+      p1Name = document.getElementById('p1-name').value.trim() || 'Player 1';
+      p2Name = currentMode === 'ai' ? '🤖 Computer' : (document.getElementById('p2-name').value.trim() || 'Player 2');
+      document.getElementById('p1-display').textContent = p1Name;
+      document.getElementById('p2-display').textContent = p2Name;
+      document.getElementById('username-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+      resetGame();
+    }
+
+    function resetGame() {
+      board = Array(9).fill('');
+      currentPlayer = 'X';
+      gameOver = false;
+      renderBoard();
+      updateStatus();
+      document.getElementById('p1-box').classList.add('active');
+      document.getElementById('p2-box').classList.remove('active');
+    }
+
+    function renderBoard() {
+      const b = document.getElementById('board');
+      b.innerHTML = '';
+      board.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (val ? ' taken' : '');
+        cell.textContent = val === 'X' ? '❌' : val === 'O' ? '⭕' : '';
+        cell.onclick = () => makeMove(i);
+        b.appendChild(cell);
+      });
+    }
+
+    function updateStatus() {
+      const name = currentPlayer === 'X' ? p1Name : p2Name;
+      document.getElementById('status').textContent = `${name}'s turn!`;
+    }
+
+    function makeMove(i) {
+      if(board[i] || gameOver) return;
+      board[i] = currentPlayer;
+      renderBoard();
+      const winner = checkWinner();
+      if(winner) {
+        highlightWin(winner.combo);
+        const name = currentPlayer === 'X' ? p1Name : p2Name;
+        document.getElementById('status').textContent = `🎉 ${name} wins!`;
+        gameOver = true;
+        return;
+      }
+      if(board.every(c => c)) {
+        document.getElementById('status').textContent = "🤝 It's a Draw!";
+        gameOver = true;
+        return;
+      }
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      document.getElementById('p1-box').classList.toggle('active', currentPlayer === 'X');
+      document.getElementById('p2-box').classList.toggle('active', currentPlayer === 'O');
+      updateStatus();
+      if(currentMode === 'ai' && currentPlayer === 'O') {
+        setTimeout(aiMove, 500);
+      }
+    }
+
+    function aiMove() {
+      // Try to win
+      let move = findBestMove('O');
+      if(move === -1) move = findBestMove('X'); // Block
+      if(move === -1 && board[4] === '') move = 4; // Center
+      if(move === -1) {
+        const corners = [0,2,6,8].filter(i => !board[i]);
+        if(corners.length) move = corners[Math.floor(Math.random()*corners.length)];
+      }
+      if(move === -1) {
+        const empty = board.map((v,i) => v?-1:i).filter(i => i !== -1);
+        if(empty.length) move = empty[Math.floor(Math.random()*empty.length)];
+      }
+      if(move !== -1) makeMove(move);
+    }
+
+    function findBestMove(player) {
+      for(const [a,b,c] of wins) {
+        const line = [board[a],board[b],board[c]];
+        if(line.filter(v=>v===player).length===2 && line.includes('')) {
+          return [a,b,c][line.indexOf('')];
+        }
+      }
+      return -1;
+    }
+
+    function checkWinner() {
+      for(const combo of wins) {
+        const [a,b,c] = combo;
+        if(board[a] && board[a]===board[b] && board[a]===board[c]) return {player:board[a],combo};
+      }
+      return null;
+    }
+
+    function highlightWin(combo) {
+      const cells = document.getElementById('board').children;
+      combo.forEach(i => cells[i].classList.add('win'));
+    }
+  </script>
+</body>
+        </html>
+
