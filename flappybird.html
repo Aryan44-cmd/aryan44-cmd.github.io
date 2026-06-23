@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Flappy Bird — Arnix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      font-family: 'Nunito', sans-serif; color: #fff;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 1rem; user-select: none;
+    }
+    .back-btn {
+      align-self:flex-start; background:rgba(255,255,255,0.08);
+      border:none; color:#fff; padding:0.5rem 1rem; border-radius:99px;
+      font-family:'Nunito',sans-serif; font-weight:700; cursor:pointer;
+      font-size:0.9rem; margin-bottom:0.8rem; text-decoration:none;
+    }
+    h1 { font-family:'Fredoka One',cursive; font-size:2rem; margin-bottom:0.5rem;
+      background:linear-gradient(135deg,#4d96ff,#c77dff); -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent; background-clip:text; }
+    .score-row { display:flex; gap:1rem; margin-bottom:0.8rem; }
+    .score-box {
+      background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:0.5rem 1.2rem; text-align:center;
+    }
+    .score-box .label { font-size:0.7rem; color:rgba(255,255,255,0.5); font-weight:700; text-transform:uppercase; }
+    .score-box .value { font-family:'Fredoka One',cursive; font-size:1.5rem; color:#4d96ff; }
+    canvas {
+      border-radius:16px; border:2px solid rgba(77,150,255,0.3);
+      box-shadow:0 0 40px rgba(77,150,255,0.1);
+      max-width:100%; cursor:pointer;
+    }
+    .hint { color:rgba(255,255,255,0.4); font-size:0.85rem; margin-top:0.8rem; font-weight:600; }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">← Back</a>
+  <h1>🐦 Flappy Bird</h1>
+  <div class="score-row">
+    <div class="score-box"><div class="label">Score</div><div class="value" id="score">0</div></div>
+    <div class="score-box"><div class="label">Best</div><div class="value" id="best">0</div></div>
+  </div>
+  <canvas id="canvas" width="320" height="480"></canvas>
+  <div class="hint">Tap canvas or press Space to flap!</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W=320, H=480;
+
+    let bird, pipes, score, best=0, state='idle', frame=0;
+    // state: idle, playing, dead
+
+    const BIRD_X=80, BIRD_R=16;
+    const PIPE_W=52, PIPE_GAP=130, PIPE_SPEED=2.5;
+    const GRAVITY=0.45, JUMP=-8;
+
+    function init() {
+      bird = {y:H/2, vy:0, angle:0};
+      pipes = [];
+      score = 0;
+      frame = 0;
+      document.getElementById('score').textContent = 0;
+    }
+
+    function addPipe() {
+      const minY=80, maxY=H-80-PIPE_GAP;
+      const topH = Math.floor(Math.random()*(maxY-minY)+minY);
+      pipes.push({x:W+10, topH});
+    }
+
+    function flap() {
+      if(state==='idle'||state==='dead') { state='playing'; init(); }
+      bird.vy = JUMP;
+    }
+
+    canvas.addEventListener('click', flap);
+    canvas.addEventListener('touchstart', e=>{e.preventDefault();flap();},{passive:false});
+    document.addEventListener('keydown', e=>{ if(e.code==='Space'){e.preventDefault();flap();} });
+
+    function update() {
+      if(state!=='playing') return;
+      frame++;
+      // Bird physics
+      bird.vy += GRAVITY;
+      bird.y += bird.vy;
+      bird.angle = Math.min(Math.max(bird.vy*3, -30), 90);
+
+      // Pipes
+      if(frame%90===0) addPipe();
+      pipes.forEach(p=>p.x-=PIPE_SPEED);
+      pipes = pipes.filter(p=>p.x>-PIPE_W);
+
+      // Score
+      pipes.forEach(p=>{
+        if(!p.passed && p.x+PIPE_W < BIRD_X) {
+          p.passed=true; score++;
+          document.getElementById('score').textContent=score;
+          if(score>best){best=score;document.getElementById('best').textContent=best;}
+        }
+      });
+
+      // Collision
+      if(bird.y+BIRD_R>H || bird.y-BIRD_R<0) { state='dead'; return; }
+      for(const p of pipes) {
+        if(BIRD_X+BIRD_R>p.x && BIRD_X-BIRD_R<p.x+PIPE_W) {
+          if(bird.y-BIRD_R<p.topH || bird.y+BIRD_R>p.topH+PIPE_GAP) { state='dead'; return; }
+        }
+      }
+    }
+
+    function drawBg() {
+      // Sky gradient
+      const g=ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,'#1a1a3e'); g.addColorStop(1,'#0f3460');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      // Stars
+      ctx.fillStyle='rgba(255,255,255,0.6)';
+      [[20,30],[60,80],[100,20],[160,60],[200,40],[260,90],[300,25],[40,200],[120,180],[280,160]].forEach(([x,y])=>{
+        ctx.beginPath(); ctx.arc(x,y,1.5,0,Math.PI*2); ctx.fill();
+      });
+      // Ground
+      const gg=ctx.createLinearGradient(0,H-40,0,H);
+      gg.addColorStop(0,'#4ecdc4'); gg.addColorStop(1,'#2e8b57');
+      ctx.fillStyle=gg; ctx.fillRect(0,H-40,W,40);
+      ctx.fillStyle='#5dade2'; ctx.fillRect(0,H-42,W,4);
+    }
+
+    function drawPipes() {
+      pipes.forEach(p=>{
+        // Top pipe
+        const gt=ctx.createLinearGradient(p.x,0,p.x+PIPE_W,0);
+        gt.addColorStop(0,'#27ae60'); gt.addColorStop(1,'#2ecc71');
+        ctx.fillStyle=gt;
+        ctx.beginPath(); ctx.roundRect(p.x, 0, PIPE_W, p.topH-10, [0,0,8,8]); ctx.fill();
+        // Top cap
+        ctx.fillStyle='#1e8449';
+        ctx.beginPath(); ctx.roundRect(p.x-5, p.topH-20, PIPE_W+10, 20, 6); ctx.fill();
+
+        // Bottom pipe
+        const gb=ctx.createLinearGradient(p.x,0,p.x+PIPE_W,0);
+        gb.addColorStop(0,'#27ae60'); gb.addColorStop(1,'#2ecc71');
+        ctx.fillStyle=gb;
+        ctx.beginPath(); ctx.roundRect(p.x, p.topH+PIPE_GAP+10, PIPE_W, H-p.topH-PIPE_GAP-10-40, [8,8,0,0]); ctx.fill();
+        // Bottom cap
+        ctx.fillStyle='#1e8449';
+        ctx.beginPath(); ctx.roundRect(p.x-5, p.topH+PIPE_GAP, PIPE_W+10, 20, 6); ctx.fill();
+      });
+    }
+
+    function drawBird() {
+      ctx.save();
+      ctx.translate(BIRD_X, bird.y);
+      ctx.rotate(bird.angle*Math.PI/180);
+      // Body
+      ctx.fillStyle='#ffd93d';
+      ctx.beginPath(); ctx.ellipse(0,0,BIRD_R,BIRD_R-2,0,0,Math.PI*2); ctx.fill();
+      // Wing
+      ctx.fillStyle='#f39c12';
+      ctx.beginPath(); ctx.ellipse(-4, 4, 10, 6, -0.3, 0, Math.PI*2); ctx.fill();
+      // Eye
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(8,-4,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(9,-4,2.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(10,-5,1,0,Math.PI*2); ctx.fill();
+      // Beak
+      ctx.fillStyle='#e67e22';
+      ctx.beginPath(); ctx.moveTo(14,-2); ctx.lineTo(22,0); ctx.lineTo(14,3); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawUI() {
+      if(state==='idle') {
+        ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#fff'; ctx.font='bold 36px Fredoka One'; ctx.textAlign='center';
+        ctx.fillText('Flappy Bird', W/2, H/2-40);
+        ctx.font='bold 18px Nunito'; ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.fillText('Tap to Start!', W/2, H/2+10);
+        ctx.font='14px Nunito'; ctx.fillStyle='rgba(255,255,255,0.4)';
+        ctx.fillText('Tap or press Space to flap', W/2, H/2+45);
+      }
+      if(state==='dead') {
+        ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#ff6b6b'; ctx.font='bold 36px Fredoka One'; ctx.textAlign='center';
+        ctx.fillText('Game Over!', W/2, H/2-50);
+        ctx.fillStyle='#ffd93d'; ctx.font='bold 22px Fredoka One';
+        ctx.fillText(`Score: ${score}`, W/2, H/2);
+        ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold 16px Nunito';
+        ctx.fillText(`Best: ${best}`, W/2, H/2+35);
+        ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='14px Nunito';
+        ctx.fillText('Tap to play again', W/2, H/2+70);
+      }
+    }
+
+    function loop() {
+      update();
+      drawBg();
+      drawPipes();
+      drawBird();
+      drawUI();
+      requestAnimationFrame(loop);
+    }
+
+    init();
+    loop();
+  </script>
+</body>
+</html>
