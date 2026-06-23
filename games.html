@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Arnix Games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Nunito', sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem 1rem; overflow-x: hidden;
+    }
+    .bubbles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+    .bubble { position:absolute; border-radius:50%; opacity:0.08; animation: float linear infinite; }
+    @keyframes float {
+      0% { transform:translateY(100vh) scale(0); opacity:0; }
+      10% { opacity:0.08; } 90% { opacity:0.08; }
+      100% { transform:translateY(-100px) scale(1); opacity:0; }
+    }
+    .content { position:relative; z-index:1; width:100%; max-width:480px; }
+    .header { text-align:center; margin-bottom:2.5rem; }
+    .back-btn {
+      display:inline-block; margin-bottom:1.5rem;
+      background:rgba(255,255,255,0.08); border:none; color:#fff;
+      padding:0.5rem 1rem; border-radius:99px; font-family:'Nunito',sans-serif;
+      font-weight:700; cursor:pointer; font-size:0.9rem; text-decoration:none;
+    }
+    .logo {
+      font-family:'Fredoka One',cursive; font-size:3.5rem;
+      background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      line-height:1; margin-bottom:0.3rem;
+    }
+    .tagline { color:rgba(255,255,255,0.5); font-size:0.95rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; }
+    .games-grid { display:flex; flex-direction:column; gap:1.2rem; }
+    .game-card {
+      background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.08);
+      border-radius:24px; padding:1.5rem; cursor:pointer; transition:all 0.3s ease;
+      text-decoration:none; display:flex; align-items:center; gap:1.2rem;
+      position:relative; overflow:hidden;
+    }
+    .game-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; transition:opacity 0.3s; }
+    .game-card:hover { transform:translateY(-4px); }
+    .game-card:hover::before { opacity:1; }
+    .game-card:active { transform:scale(0.97); }
+    .card-ttt::before { background:linear-gradient(135deg,rgba(255,107,107,0.15),transparent); }
+    .card-ttt:hover { box-shadow:0 20px 60px rgba(255,107,107,0.2); border-color:rgba(255,107,107,0.4); }
+    .card-snake::before { background:linear-gradient(135deg,rgba(107,203,119,0.15),transparent); }
+    .card-snake:hover { box-shadow:0 20px 60px rgba(107,203,119,0.2); border-color:rgba(107,203,119,0.4); }
+    .card-flappy::before { background:linear-gradient(135deg,rgba(77,150,255,0.15),transparent); }
+    .card-flappy:hover { box-shadow:0 20px 60px rgba(77,150,255,0.2); border-color:rgba(77,150,255,0.4); }
+    .game-emoji { font-size:3.5rem; min-width:70px; height:70px; display:flex; align-items:center; justify-content:center; border-radius:18px; position:relative; z-index:1; }
+    .emoji-ttt { background:rgba(255,107,107,0.15); }
+    .emoji-snake { background:rgba(107,203,119,0.15); }
+    .emoji-flappy { background:rgba(77,150,255,0.15); }
+    .game-info { flex:1; position:relative; z-index:1; }
+    .game-name { font-family:'Fredoka One',cursive; font-size:1.5rem; color:#fff; margin-bottom:0.2rem; }
+    .game-desc { color:rgba(255,255,255,0.5); font-size:0.85rem; font-weight:600; margin-bottom:0.6rem; }
+    .game-modes { display:flex; gap:0.4rem; flex-wrap:wrap; }
+    .mode-tag { font-size:0.7rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:99px; text-transform:uppercase; letter-spacing:0.05em; }
+    .tag-red { background:rgba(255,107,107,0.2); color:#ff6b6b; }
+    .tag-green { background:rgba(107,203,119,0.2); color:#6bcb77; }
+    .tag-blue { background:rgba(77,150,255,0.2); color:#4d96ff; }
+    .tag-yellow { background:rgba(255,217,61,0.2); color:#ffd93d; }
+    .game-arrow { font-size:1.5rem; color:rgba(255,255,255,0.2); position:relative; z-index:1; transition:color 0.3s,transform 0.3s; }
+    .game-card:hover .game-arrow { color:rgba(255,255,255,0.6); transform:translateX(4px); }
+    .footer { text-align:center; margin-top:2rem; color:rgba(255,255,255,0.2); font-size:0.8rem; font-weight:600; }
+    .footer span { color:#ff6b6b; }
+  </style>
+</head>
+<body>
+  <div class="bubbles" id="bubbles"></div>
+  <div class="content">
+    <div class="header">
+      <a href="index.html" class="back-btn">← Portfolio</a>
+      <div class="logo">🎮 Arnix</div>
+      <div class="tagline">Games by Aryan</div>
+    </div>
+    <div class="games-grid">
+      <a href="tictactoe.html" class="game-card card-ttt">
+        <div class="game-emoji emoji-ttt">❌</div>
+        <div class="game-info">
+          <div class="game-name">Tic Tac Toe</div>
+          <div class="game-desc">Classic 3x3 strategy game</div>
+          <div class="game-modes">
+            <span class="mode-tag tag-red">vs AI</span>
+            <span class="mode-tag tag-green">Pass & Play</span>
+            <span class="mode-tag tag-blue">Online</span>
+          </div>
+        </div>
+        <div class="game-arrow">›</div>
+      </a>
+      <a href="snake.html" class="game-card card-snake">
+        <div class="game-emoji emoji-snake">🐍</div>
+        <div class="game-info">
+          <div class="game-name">Snake</div>
+          <div class="game-desc">Eat food, grow longer!</div>
+          <div class="game-modes">
+            <span class="mode-tag tag-green">Single Player</span>
+            <span class="mode-tag tag-yellow">High Score</span>
+          </div>
+        </div>
+        <div class="game-arrow">›</div>
+      </a>
+      <a href="flappybird.html" class="game-card card-flappy">
+        <div class="game-emoji emoji-flappy">🐦</div>
+        <div class="game-info">
+          <div class="game-name">Flappy Bird</div>
+          <div class="game-desc">Tap to fly, avoid pipes!</div>
+          <div class="game-modes">
+            <span class="mode-tag tag-blue">Single Player</span>
+            <span class="mode-tag tag-yellow">High Score</span>
+          </div>
+        </div>
+        <div class="game-arrow">›</div>
+      </a>
+    </div>
+    <div class="footer">Made with <span>♥</span> by Aryan44-cmd</div>
+  </div>
+  <script>
+    const container=document.getElementById('bubbles');
+    const colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff'];
+    for(let i=0;i<15;i++){
+      const b=document.createElement('div'); b.className='bubble';
+      const size=Math.random()*80+20;
+      b.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*10}s;`;
+      container.appendChild(b);
+    }
+  </script>
+</body>
+</html>
+
